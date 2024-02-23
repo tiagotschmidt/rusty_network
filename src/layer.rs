@@ -26,35 +26,36 @@ impl Layer {
         Layer { neuron_list }
     }
 
-    pub fn compute_n_to_n(&self, input_params: Vec<f64>) -> Vec<f64> {
+    pub fn compute_m_to_n(&self, input_params: &Vec<f64>) -> Vec<f64> {
         let mut result_vec = Vec::new();
 
         for neuron in self.neuron_list.iter() {
-            result_vec.push(neuron.compute(input_params.clone()));
+            result_vec.push(neuron.compute(input_params));
         }
 
         result_vec
     }
 
-    pub fn compute_n_to_1(&self, input_params: Vec<f64>) -> f64 {
+    pub fn compute_n_to_1(&self, input_params: &Vec<f64>) -> f64 {
         let mut result_vec = Vec::new();
 
         for neuron in self.neuron_list.iter() {
-            result_vec.push(neuron.compute(input_params.clone()));
+            result_vec.push(neuron.compute(input_params));
         }
 
         result_vec.into_iter().fold(0_f64, |acc, item| acc + item)
     }
 
-    pub fn compute_mse(&self, input_params: Vec<f64>, output: f64) -> f64 {
-        ((self.compute_n_to_1(input_params.clone()) - output)
-            * (self.compute_n_to_1(input_params) - output))
-            .sqrt()
+    pub fn compute_absolute_error(&self, input_params: &Vec<f64>, output: f64) -> f64 {
+        self.compute_n_to_1(&input_params) - output
     }
 
-    pub fn set_final_layer_error(&mut self, input_params: Vec<f64>, output: f64) {
-        let temp = self.compute_mse(input_params, output);
-        let neuron = self.neuron_list.first_mut().unwrap();
+    pub fn set_final_layer_error(&mut self, input_params: &Vec<f64>, output: f64) {
+        let temp = self.compute_absolute_error(input_params, output);
+        let neuron = self
+            .neuron_list
+            .first_mut()
+            .expect("There should awlays be at least one neuron when calling this function.");
         neuron.set_error(temp)
     }
 
