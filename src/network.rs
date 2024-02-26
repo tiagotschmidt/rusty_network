@@ -77,6 +77,13 @@ impl Network {
             )
         }
 
+        for layer in &intermidiate_values {
+            for item in layer {
+                print!("{:.1}\t", item);
+            }
+            println!("\n");
+        }
+
         Some(
             self.output_layer
                 .compute_n_to_1(intermidiate_values.last()?),
