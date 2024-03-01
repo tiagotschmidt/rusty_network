@@ -46,6 +46,17 @@ impl Layer {
         result_vec.into_iter().fold(0_f64, |acc, item| acc + item)
     }
 
+    pub fn compute_layer_errors(
+        &mut self,
+        inputs: &Vec<f64>,
+        next_layer_errors: &Vec<f64>,
+    ) -> Vec<f64> {
+        self.neuron_list
+            .iter_mut()
+            .map(|item| item.calculate_error(inputs, next_layer_errors))
+            .collect::<Vec<f64>>()
+    }
+
     pub fn compute_absolute_error(&self, input_params: &Vec<f64>, output: f64) -> f64 {
         self.compute_n_to_1(&input_params) - output
     }

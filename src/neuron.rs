@@ -57,10 +57,11 @@ impl Neuron {
         (self.activation_function)(self.multiply_and_accumulate(inputs))
     }
 
-    pub fn calculate_error(mut self, inputs: &Vec<f64>, next_layer_errors: &Vec<f64>) {
+    pub fn calculate_error(&mut self, inputs: &Vec<f64>, next_layer_errors: &Vec<f64>) -> f64 {
         let temp_factor = (self.activation_function_prime)(self.multiply_and_accumulate(inputs));
         let total = self.multiply_and_accumulate(next_layer_errors);
         self.current_error = total * temp_factor;
+        self.current_error
     }
 
     pub fn step_gradient(mut self, inputs: Vec<f64>) {
