@@ -84,11 +84,10 @@ impl Neuron {
 impl Display for Neuron {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut current_string: String = "".to_owned();
-        //        for (i, weight) in self.weights.iter().enumerate() {
-        //            current_string += "\n";
-        //            current_string = current_string + &format!("Weight {}: {}", i, weight);
-        //        }
-        current_string = current_string + &format!("\nBias :{}", self.bias);
+        for (i, weight) in self.weights.iter().enumerate() {
+            current_string = current_string + &format!("\tWeight {}: {}", i, weight);
+        }
+        current_string = current_string + &format!("\tNeuron Bias :{}", self.bias);
         write!(f, "{}", current_string)
     }
 }

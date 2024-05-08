@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::{layer::Layer, neuron::ActivationFunction};
 
 pub struct Network {
@@ -45,7 +47,7 @@ impl Network {
             ))
         }
 
-        let mut intermidiate_values: Vec<Vec<f64>> = Vec::new();
+        let intermidiate_values: Vec<Vec<f64>> = Vec::new();
 
         Network {
             intermidiate_values,
@@ -117,5 +119,18 @@ impl Network {
             self.intermidiate_values.first().unwrap(),
             intermidiate_errors.last().unwrap(),
         );
+    }
+}
+
+impl Display for Network {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut current_string: String = "".to_owned();
+        current_string += "\nNetwork:";
+        current_string += &format!("\n\t{:#}", self.input_layer);
+        for layer in self.common_layers.iter() {
+            current_string += &format!("\n\t{:#}", layer);
+        }
+        current_string += &format!("\n\t{:#}", self.output_layer);
+        write!(f, "{}", current_string)
     }
 }

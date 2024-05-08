@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::neuron::{ActivationFunction, Neuron};
 
 pub struct Layer {
@@ -76,5 +78,16 @@ impl Layer {
             .iter()
             .for_each(|neuron| acc += neuron.get_bias());
         acc
+    }
+}
+
+impl Display for Layer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut current_string: String = "".to_owned();
+        current_string += "Layer:";
+        for neuron in self.neuron_list.iter() {
+            current_string += &format!("\n\t{:#}", neuron);
+        }
+        write!(f, "{}", current_string)
     }
 }

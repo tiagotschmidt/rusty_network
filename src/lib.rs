@@ -1,4 +1,3 @@
-mod layer;
-mod network;
-mod neuron;
-mod unit_tests;
+pub mod layer;
+pub mod network;
+pub mod neuron;
