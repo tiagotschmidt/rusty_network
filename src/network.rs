@@ -31,7 +31,7 @@ impl Network {
             activation_function_prime,
         );
         let output_layer = Layer::new(
-            network_width,
+            1,
             input_width,
             learning_rate,
             activation_function,
@@ -63,6 +63,8 @@ impl Network {
 
     pub fn feedforward_compute(&mut self, inputs: Vec<f64>) -> Option<f64> {
         if inputs.len() != self.input_width {
+            println!("{},{}", inputs.len(), self.input_width);
+            println!("Input width must be compatible with network width");
             return None;
         }
 
@@ -118,6 +120,27 @@ impl Network {
         self.input_layer.compute_layer_errors(
             self.intermidiate_values.first().unwrap(),
             intermidiate_errors.last().unwrap(),
+        );
+    }
+
+    pub fn step_gradient(&mut self, inputs: &Vec<f64>) {
+        self.input_layer.step_gradient(inputs);
+
+        for i in 0..self.network_depth - 2 {
+            self.common_layers
+                .get_mut(i)
+                .expect("Intermidiate layers must be initialized!")
+                .step_gradient(
+                    self.intermidiate_values
+                        .get(i + 1)
+                        .expect("Intermidiate values must be initialized!"),
+                );
+        }
+
+        self.output_layer.step_gradient(
+            self.intermidiate_values
+                .last()
+                .expect("Final intermidiate values must be initialized!"),
         );
     }
 }

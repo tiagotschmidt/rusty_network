@@ -79,6 +79,12 @@ impl Layer {
             .for_each(|neuron| acc += neuron.get_bias());
         acc
     }
+
+    pub fn step_gradient(&mut self, inputs: &Vec<f64>) {
+        for neuron in self.neuron_list.iter_mut() {
+            neuron.step_gradient(inputs);
+        }
+    }
 }
 
 impl Display for Layer {

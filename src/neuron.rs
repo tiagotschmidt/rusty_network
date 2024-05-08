@@ -64,7 +64,7 @@ impl Neuron {
         self.current_error
     }
 
-    pub fn step_gradient(mut self, inputs: Vec<f64>) {
+    pub fn step_gradient(&mut self, inputs: &Vec<f64>) {
         self.weights = self
             .weights
             .iter()
@@ -84,8 +84,9 @@ impl Neuron {
 impl Display for Neuron {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut current_string: String = "".to_owned();
+        current_string += "->";
         for (i, weight) in self.weights.iter().enumerate() {
-            current_string = current_string + &format!("\tWeight {}: {}", i, weight);
+            current_string = current_string + &format!("Weight {}: {}\t", i, weight);
         }
         current_string = current_string + &format!("\tNeuron Bias :{}", self.bias);
         write!(f, "{}", current_string)
