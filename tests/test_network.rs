@@ -31,7 +31,7 @@ fn create_network() {
         input_vec.push(0.0)
     }
 
-    println!("{}", new_network);
+    //println!("{}", new_network);
     let optional_value = new_network.feedforward_compute(input_vec);
-    assert!(optional_value.is_some())
+    assert!(optional_value.is_ok())
 }

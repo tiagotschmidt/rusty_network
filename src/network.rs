@@ -1,9 +1,21 @@
-use std::fmt::Display;
-
 use crate::{layer::Layer, neuron::ActivationFunction};
+use std::fmt::Display;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum NetworkError {
+    #[error("Input data is width{0}, incompatible with network width {1}.")]
+    InputIncompatibleWidth(usize, usize),
+    #[error("Intermediate values is incorrect.")]
+    IntermediateValuesIncomplete,
+    #[error("Failed to get/interact with the common layers in the network. Check network depth")]
+    InvalidCommonLayers,
+    #[error("Failed to get/interact with the common layers in the network. Check network depth")]
+    ErrorsIncomplete,
+}
 
 pub struct Network {
-    intermidiate_values: Vec<Vec<f64>>,
+    intermediate_values: Vec<Vec<f64>>,
     pub network_depth: usize,
     pub network_width: usize,
     pub input_width: usize,
@@ -50,7 +62,7 @@ impl Network {
         let intermidiate_values: Vec<Vec<f64>> = Vec::new();
 
         Network {
-            intermidiate_values,
+            intermediate_values: intermidiate_values,
             network_depth,
             network_width,
             input_width,
@@ -61,32 +73,42 @@ impl Network {
         }
     }
 
-    pub fn feedforward_compute(&mut self, inputs: Vec<f64>) -> Option<f64> {
+    pub fn feedforward_compute(&mut self, inputs: Vec<f64>) -> Result<f64, NetworkError> {
         if inputs.len() != self.input_width {
-            println!("{},{}", inputs.len(), self.input_width);
-            println!("Input width must be compatible with network width");
-            return None;
+            return Err(NetworkError::InputIncompatibleWidth(
+                inputs.len(),
+                self.input_width,
+            ));
         }
 
-        self.intermidiate_values.push(inputs);
+        self.intermediate_values.push(inputs);
 
-        let first_layer_result = self
-            .input_layer
-            .compute_m_to_n(self.intermidiate_values.first().unwrap());
+        let input_params = self
+            .intermediate_values
+            .first()
+            .ok_or(NetworkError::IntermediateValuesIncomplete)?;
+        let first_layer_result = self.input_layer.compute_m_to_n(input_params);
 
-        self.intermidiate_values.push(first_layer_result);
+        self.intermediate_values.push(first_layer_result);
 
         for i in 0..self.network_depth - 2 {
-            self.intermidiate_values.push(
-                self.common_layers
-                    .get(i)?
-                    .compute_m_to_n(self.intermidiate_values.last()?),
-            )
+            let current_layer = &self
+                .common_layers
+                .get(i)
+                .ok_or(NetworkError::InvalidCommonLayers)?;
+            let last_layer_outputs = self
+                .intermediate_values
+                .last()
+                .ok_or(NetworkError::IntermediateValuesIncomplete)?;
+            let value = current_layer.compute_m_to_n(last_layer_outputs);
+            self.intermediate_values.push(value)
         }
 
-        let output = self
-            .output_layer
-            .compute_n_to_1(self.intermidiate_values.last()?);
+        let input_params = self
+            .intermediate_values
+            .last()
+            .ok_or(NetworkError::IntermediateValuesIncomplete)?;
+        let output = self.output_layer.compute_n_to_1(input_params);
 
         //        for layer in &intermidiate_values {
         //            for item in layer {
@@ -95,53 +117,74 @@ impl Network {
         //            println!("\n");
         //        }
 
-        Some(output)
+        Ok(output)
     }
 
-    pub fn backpropagate_error(&mut self, final_error: f64) {
-        let mut intermidiate_errors: Vec<Vec<f64>> = Vec::new();
+    pub fn backpropagate_error(&mut self, final_error: f64) -> Result<(), NetworkError> {
+        let mut intermediate_errors: Vec<Vec<f64>> = Vec::new();
 
-        intermidiate_errors.push(vec![final_error]);
+        intermediate_errors.push(vec![final_error]);
 
         let last_layer_result = self.output_layer.compute_layer_errors(
-            self.intermidiate_values.last().unwrap(),
-            intermidiate_errors.last().unwrap(),
+            self.intermediate_values
+                .last()
+                .ok_or(NetworkError::IntermediateValuesIncomplete)?,
+            intermediate_errors
+                .last()
+                .ok_or(NetworkError::ErrorsIncomplete)?,
         );
 
-        intermidiate_errors.push(last_layer_result);
+        intermediate_errors.push(last_layer_result);
 
         for i in (self.network_depth - 2)..0 {
-            intermidiate_errors.push(self.common_layers.get_mut(i).unwrap().compute_layer_errors(
-                self.intermidiate_values.get(i).unwrap(),
-                intermidiate_errors.last().unwrap(),
-            ))
+            intermediate_errors.push(
+                self.common_layers
+                    .get_mut(i)
+                    .ok_or(NetworkError::InvalidCommonLayers)?
+                    .compute_layer_errors(
+                        self.intermediate_values
+                            .get(i)
+                            .ok_or(NetworkError::IntermediateValuesIncomplete)?,
+                        intermediate_errors
+                            .last()
+                            .ok_or(NetworkError::ErrorsIncomplete)?,
+                    ),
+            )
         }
 
         self.input_layer.compute_layer_errors(
-            self.intermidiate_values.first().unwrap(),
-            intermidiate_errors.last().unwrap(),
+            self.intermediate_values
+                .first()
+                .ok_or(NetworkError::IntermediateValuesIncomplete)?,
+            intermediate_errors
+                .last()
+                .ok_or(NetworkError::ErrorsIncomplete)?,
         );
+
+        Ok(())
     }
 
-    pub fn step_gradient(&mut self, inputs: &Vec<f64>) {
+    pub fn step_gradient(&mut self, inputs: &Vec<f64>) -> Result<(), NetworkError> {
         self.input_layer.step_gradient(inputs);
 
         for i in 0..self.network_depth - 2 {
             self.common_layers
                 .get_mut(i)
-                .expect("Intermidiate layers must be initialized!")
+                .ok_or(NetworkError::InvalidCommonLayers)?
                 .step_gradient(
-                    self.intermidiate_values
+                    self.intermediate_values
                         .get(i + 1)
                         .expect("Intermidiate values must be initialized!"),
                 );
         }
 
         self.output_layer.step_gradient(
-            self.intermidiate_values
+            self.intermediate_values
                 .last()
-                .expect("Final intermidiate values must be initialized!"),
+                .ok_or(NetworkError::IntermediateValuesIncomplete)?,
         );
+
+        Ok(())
     }
 }
 

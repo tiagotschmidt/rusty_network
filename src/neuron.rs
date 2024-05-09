@@ -1,7 +1,5 @@
-use std::fmt::Display;
-
 use rand::Rng;
-
+use std::fmt::Display;
 pub type ActivationFunction = fn(f64) -> f64;
 
 pub struct Neuron {

@@ -4,12 +4,9 @@ use std::{
     io::{BufRead, BufReader},
 };
 
-use rand::Rng;
 use rusty_network::network::Network;
 
 fn main() {
-    let mut rng = rand::thread_rng();
-
     let input_file = File::open("input.txt").unwrap();
     let reader = BufReader::new(input_file);
 
