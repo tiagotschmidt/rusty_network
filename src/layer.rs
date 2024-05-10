@@ -63,15 +63,6 @@ impl Layer {
         self.compute_n_to_1(&input_params) - output
     }
 
-    pub fn set_final_layer_error(&mut self, input_params: &Vec<f64>, output: f64) {
-        let temp = self.compute_absolute_error(input_params, output);
-        let neuron = self
-            .neuron_list
-            .first_mut()
-            .expect("There should awlays be at least one neuron when calling this function.");
-        neuron.set_error(temp)
-    }
-
     pub fn accumulate_bias(&self) -> f64 {
         let mut acc = 0.0;
         self.neuron_list
@@ -92,7 +83,7 @@ impl Display for Layer {
         let mut current_string: String = "".to_owned();
         current_string += "Layer:";
         for neuron in self.neuron_list.iter() {
-            current_string += &format!("\n\t{:#}", neuron);
+            current_string += &format!("\n\t\t{:#}", neuron);
         }
         write!(f, "{}", current_string)
     }

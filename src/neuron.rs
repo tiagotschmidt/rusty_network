@@ -84,9 +84,12 @@ impl Display for Neuron {
         let mut current_string: String = "".to_owned();
         current_string += "->";
         for (i, weight) in self.weights.iter().enumerate() {
-            current_string = current_string + &format!("Weight {}: {}\t", i, weight);
+            if i < 1 {
+                current_string = current_string + &format!("Weight {}: {:.2}.", i, weight);
+            }
         }
-        current_string = current_string + &format!("\tNeuron Bias :{}", self.bias);
+        current_string = current_string + &format!("\tNeuron Bias :{:.2}.", self.bias);
+        current_string = current_string + &format!("\tNeuron Error :{:.2}.", self.current_error);
         write!(f, "{}", current_string)
     }
 }

@@ -73,7 +73,7 @@ impl Network {
         }
     }
 
-    pub fn feedforward_compute(&mut self, inputs: Vec<f64>) -> Result<f64, NetworkError> {
+    pub fn feedforward_compute(&mut self, inputs: &Vec<f64>) -> Result<f64, NetworkError> {
         if inputs.len() != self.input_width {
             return Err(NetworkError::InputIncompatibleWidth(
                 inputs.len(),
@@ -81,7 +81,7 @@ impl Network {
             ));
         }
 
-        self.intermediate_values.push(inputs);
+        self.intermediate_values.push(inputs.clone());
 
         let input_params = self
             .intermediate_values
@@ -186,17 +186,30 @@ impl Network {
 
         Ok(())
     }
+
+    pub fn batch_train_one_iteration(
+        &mut self,
+        inputs: &Vec<f64>,
+        aim: f64,
+    ) -> Result<(), NetworkError> {
+        let final_answer = self.feedforward_compute(inputs)?;
+        let final_error = ((final_answer - aim) * (final_answer - aim)).sqrt();
+        self.backpropagate_error(final_error)?;
+        self.step_gradient(inputs)?;
+
+        Ok(())
+    }
 }
 
 impl Display for Network {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut current_string: String = "".to_owned();
         current_string += "\nNetwork:";
-        current_string += &format!("\n\t{:#}", self.input_layer);
+        current_string += &format!("\n\t*{:#}", self.input_layer);
         for layer in self.common_layers.iter() {
-            current_string += &format!("\n\t{:#}", layer);
+            current_string += &format!("\n\t*{:#}", layer);
         }
-        current_string += &format!("\n\t{:#}", self.output_layer);
+        current_string += &format!("\n\t*{:#}", self.output_layer);
         write!(f, "{}", current_string)
     }
 }

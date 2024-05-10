@@ -56,8 +56,12 @@ fn main() {
     );
 
     println!("{}", new_network);
-    for input in inputs {
-        let optional_value = new_network.feedforward_compute(input);
-        println!("{:#?}", optional_value);
+    for (i, input) in inputs.iter().enumerate() {
+        let _optional_value =
+            new_network.batch_train_one_iteration(&input, *outputs.get(i).unwrap());
+        println!("{}", new_network);
     }
+
+    let test_return = new_network.feedforward_compute(&vec![1.0, 5.09]);
+    println!("Retorno de 1 - 5.09: {}", test_return.unwrap());
 }

@@ -32,6 +32,6 @@ fn create_network() {
     }
 
     //println!("{}", new_network);
-    let optional_value = new_network.feedforward_compute(input_vec);
+    let optional_value = new_network.feedforward_compute(&input_vec);
     assert!(optional_value.is_ok())
 }
