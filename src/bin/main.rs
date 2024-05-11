@@ -17,15 +17,13 @@ fn main() {
         let values = line_str.split_whitespace();
 
         let mut input_data_line = vec![];
-        let mut index = 0;
 
-        for value in values {
+        for (index, value) in values.enumerate() {
             if index < 2 {
                 input_data_line.push(value.parse::<f64>().unwrap());
             } else {
                 outputs.push(value.parse::<f64>().unwrap());
             }
-            index += 1;
         }
         inputs.push(input_data_line);
     }
@@ -67,6 +65,6 @@ fn main() {
             }
         }
     }
-    let test_return = new_network.feedforward_compute(&vec![1.0, 5.09]);
+    let test_return = new_network.feedforward_compute(&[1.0, 5.09]);
     println!("Retorno de 1 - 5.09: {}", test_return.unwrap());
 }

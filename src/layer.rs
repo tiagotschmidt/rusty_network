@@ -47,7 +47,7 @@ impl Layer {
         Ok(next_layer_weights_for_neuron)
     }
 
-    pub fn compute_m_to_n(&self, inputs: &Vec<f64>) -> Vec<f64> {
+    pub fn compute_m_to_n(&self, inputs: &[f64]) -> Vec<f64> {
         let mut result_vec = Vec::new();
 
         for neuron in self.neuron_list.iter() {
@@ -57,7 +57,7 @@ impl Layer {
         result_vec
     }
 
-    pub fn compute_n_to_1(&self, inputs: &Vec<f64>) -> f64 {
+    pub fn compute_n_to_1(&self, inputs: &[f64]) -> f64 {
         let mut result_vec = Vec::new();
 
         for neuron in self.neuron_list.iter() {
@@ -69,8 +69,8 @@ impl Layer {
 
     pub fn compute_layer_errors(
         &mut self,
-        inputs: &Vec<f64>,
-        next_layer_errors_caused: &Vec<f64>,
+        inputs: &[f64],
+        next_layer_errors_caused: &[f64],
         next_layer_weights_by_neuron: &Vec<Vec<f64>>,
     ) -> Result<Vec<f64>, NetworkError> {
         self.neuron_list
@@ -88,7 +88,7 @@ impl Layer {
             .collect()
     }
 
-    pub fn compute_absolute_error(&self, input_params: &Vec<f64>, output: f64) -> f64 {
+    pub fn compute_absolute_error(&self, input_params: &[f64], output: f64) -> f64 {
         self.compute_n_to_1(input_params) - output
     }
 
@@ -100,7 +100,7 @@ impl Layer {
         acc
     }
 
-    pub fn step_gradient(&mut self, inputs: &Vec<f64>) {
+    pub fn step_gradient(&mut self, inputs: &[f64]) {
         for neuron in self.neuron_list.iter_mut() {
             neuron.step_gradient(inputs);
         }

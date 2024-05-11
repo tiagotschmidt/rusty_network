@@ -88,8 +88,8 @@ impl Network {
         }
     }
 
-    pub fn feedforward_compute(&mut self, inputs: &Vec<f64>) -> Result<f64, NetworkError> {
-        self.intermediate_values.push(inputs.clone());
+    pub fn feedforward_compute(&mut self, inputs: &[f64]) -> Result<f64, NetworkError> {
+        self.intermediate_values.push(inputs.to_vec());
 
         match self.network_type {
             NetworkType::SingleNeuron => (),
@@ -105,24 +105,21 @@ impl Network {
             }
         }
 
-        match self.network_type {
-            NetworkType::MultiLayerPerceptron => {
-                for i in 0..self.network_depth - 2 {
-                    let inputs = self
-                        .intermediate_values
-                        .last()
-                        .ok_or(NetworkError::IntermediateValuesIncomplete)?;
+        if let NetworkType::MultiLayerPerceptron = self.network_type {
+            for i in 0..self.network_depth - 2 {
+                let inputs = self
+                    .intermediate_values
+                    .last()
+                    .ok_or(NetworkError::IntermediateValuesIncomplete)?;
 
-                    let value = self
-                        .common_layers
-                        .get(i)
-                        .ok_or(NetworkError::InvalidCommonLayers)?
-                        .compute_m_to_n(inputs);
+                let value = self
+                    .common_layers
+                    .get(i)
+                    .ok_or(NetworkError::InvalidCommonLayers)?
+                    .compute_m_to_n(inputs);
 
-                    self.intermediate_values.push(value)
-                }
+                self.intermediate_values.push(value)
             }
-            _ => (),
         }
 
         let output = self.output_layer.compute_n_to_1(
@@ -196,7 +193,7 @@ impl Network {
         Ok(())
     }
 
-    pub fn step_gradient(&mut self, inputs: &Vec<f64>) -> Result<(), NetworkError> {
+    pub fn step_gradient(&mut self, inputs: &[f64]) -> Result<(), NetworkError> {
         self.input_layer.step_gradient(inputs);
 
         if self.network_depth > 2 {
@@ -225,7 +222,7 @@ impl Network {
 
     pub fn batch_train_one_iteration(
         &mut self,
-        inputs: &Vec<f64>,
+        inputs: &[f64],
         aim: f64,
     ) -> Result<(), NetworkError> {
         let final_answer = self.feedforward_compute(inputs)?;

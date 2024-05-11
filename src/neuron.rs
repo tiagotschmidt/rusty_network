@@ -42,7 +42,7 @@ impl Neuron {
         }
     }
 
-    fn multiply_and_accumulate(&self, inputs: &Vec<f64>) -> f64 {
+    fn multiply_and_accumulate(&self, inputs: &[f64]) -> f64 {
         self.weights
             .iter()
             .zip(inputs.iter())
@@ -53,14 +53,14 @@ impl Neuron {
         self.bias
     }
 
-    pub fn compute(&self, inputs: &Vec<f64>) -> f64 {
+    pub fn compute(&self, inputs: &[f64]) -> f64 {
         (self.activation_function)(self.multiply_and_accumulate(inputs))
     }
 
     pub fn calculate_error(
         &mut self,
-        inputs: &Vec<f64>,
-        next_layer_errors_caused: &Vec<f64>,
+        inputs: &[f64],
+        next_layer_errors_caused: &[f64],
         next_layer_weights: &Vec<f64>,
     ) -> Result<f64, NetworkError> {
         let temp_factor = (self.activation_function_prime)(self.multiply_and_accumulate(inputs));
@@ -72,7 +72,7 @@ impl Neuron {
         Ok(self.current_error)
     }
 
-    pub fn step_gradient(&mut self, inputs: &Vec<f64>) {
+    pub fn step_gradient(&mut self, inputs: &[f64]) {
         self.weights = self
             .weights
             .iter()
