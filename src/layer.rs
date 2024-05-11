@@ -1,6 +1,10 @@
-use std::fmt::Display;
+use core::f64;
+use std::{fmt::Display, vec};
 
-use crate::neuron::{ActivationFunction, Neuron};
+use crate::{
+    network::NetworkError,
+    neuron::{ActivationFunction, Neuron},
+};
 
 pub struct Layer {
     neuron_list: Vec<Neuron>,
@@ -51,16 +55,32 @@ impl Layer {
     pub fn compute_layer_errors(
         &mut self,
         inputs: &Vec<f64>,
-        next_layer_errors: &Vec<f64>,
-    ) -> Vec<f64> {
+        next_layer_errors_caused: &Vec<f64>,
+        next_layer_weights_by_neuron: &Vec<Vec<f64>>,
+    ) -> Result<Vec<f64>, NetworkError> {
         self.neuron_list
             .iter_mut()
-            .map(|item| item.calculate_error(inputs, next_layer_errors))
-            .collect::<Vec<f64>>()
+            .enumerate()
+            .map(|(i, neuron)| {
+                let mut next_layer_weights_for_this_neuron = vec![];
+                for neuron_weights_list in next_layer_weights_by_neuron {
+                    next_layer_weights_for_this_neuron.push(
+                        *neuron_weights_list
+                            .get(i)
+                            .ok_or(NetworkError::ErrorsIncomplete)?,
+                    );
+                }
+                neuron.calculate_error(
+                    inputs,
+                    next_layer_errors_caused,
+                    &next_layer_weights_for_this_neuron,
+                )
+            })
+            .collect()
     }
 
     pub fn compute_absolute_error(&self, input_params: &Vec<f64>, output: f64) -> f64 {
-        self.compute_n_to_1(&input_params) - output
+        self.compute_n_to_1(input_params) - output
     }
 
     pub fn accumulate_bias(&self) -> f64 {
@@ -75,6 +95,24 @@ impl Layer {
         for neuron in self.neuron_list.iter_mut() {
             neuron.step_gradient(inputs);
         }
+    }
+
+    pub fn set_final_layer_error(&mut self, error: f64) {
+        let neuron = self
+            .neuron_list
+            .first_mut()
+            .expect("There should awlays be at least one neuron when calling this function.");
+        neuron.set_error(error);
+    }
+
+    pub fn get_weights_by_neurons(&self) -> Vec<Vec<f64>> {
+        let mut weights_by_neurons = vec![];
+
+        for neuron in self.neuron_list.iter() {
+            weights_by_neurons.push(neuron.weights.clone());
+        }
+
+        weights_by_neurons
     }
 }
 

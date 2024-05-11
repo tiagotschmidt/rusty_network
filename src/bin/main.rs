@@ -31,17 +31,17 @@ fn main() {
         inputs.push(input_data_line);
     }
 
-    println!("{:?}", inputs);
-    println!("{:?}", outputs);
+    //println!("{:?}", inputs);
+    //println!("{:?}", outputs);
 
-    let first_random_integer: usize = 2;
-    let network_width: usize = 2_usize;
+    let network_depth: usize = 2;
+    let network_width: usize = 4_usize;
 
-    println!("Profundidade da rede: {}", first_random_integer);
+    println!("Profundidade da rede: {}", network_depth);
     println!("Largura da rede: {}", network_width);
 
     let mut new_network = Network::new(
-        first_random_integer,
+        network_depth,
         network_width,
         network_width,
         0.01,
@@ -55,13 +55,14 @@ fn main() {
         },
     );
 
-    println!("{}", new_network);
-    for (i, input) in inputs.iter().enumerate() {
-        let _optional_value =
-            new_network.batch_train_one_iteration(&input, *outputs.get(i).unwrap());
-        println!("{}", new_network);
+    //println!("{}", new_network);
+    for _ in 0..10000 {
+        for (i, input) in inputs.iter().enumerate() {
+            let _optional_value =
+                new_network.batch_train_one_iteration(input, *outputs.get(i).unwrap());
+            //println!("{}", new_network);
+        }
     }
-
     let test_return = new_network.feedforward_compute(&vec![1.0, 5.09]);
     println!("Retorno de 1 - 5.09: {}", test_return.unwrap());
 }

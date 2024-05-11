@@ -35,29 +35,74 @@ impl Network {
         activation_function_prime: ActivationFunction,
     ) -> Self {
         let mut common_layers = Vec::new();
-        let input_layer = Layer::new(
-            network_width,
-            input_width,
-            learning_rate,
-            activation_function,
-            activation_function_prime,
-        );
-        let output_layer = Layer::new(
-            1,
-            input_width,
-            learning_rate,
-            activation_function,
-            activation_function_prime,
-        );
-        for _ in 0..network_depth - 2 {
-            common_layers.push(Layer::new(
-                network_width,
-                network_width,
-                learning_rate,
-                activation_function,
-                activation_function_prime,
-            ))
-        }
+
+        let (input_layer, output_layer, common_layers) = match network_depth {
+            i if i == 1 => {
+                let output_layer = Layer::new(
+                    1,
+                    input_width,
+                    learning_rate,
+                    activation_function,
+                    activation_function_prime,
+                );
+
+                let empty_layer = Layer::new(
+                    0,
+                    input_width,
+                    learning_rate,
+                    activation_function,
+                    activation_function_prime,
+                );
+
+                (empty_layer, output_layer, Vec::new())
+            }
+            i if i == 2 => {
+                let input_layer = Layer::new(
+                    network_width,
+                    input_width,
+                    learning_rate,
+                    activation_function,
+                    activation_function_prime,
+                );
+
+                let output_layer = Layer::new(
+                    1,
+                    input_width,
+                    learning_rate,
+                    activation_function,
+                    activation_function_prime,
+                );
+
+                (input_layer, output_layer, Vec::new())
+            }
+            _ => {
+                let input_layer = Layer::new(
+                    network_width,
+                    input_width,
+                    learning_rate,
+                    activation_function,
+                    activation_function_prime,
+                );
+                let output_layer = Layer::new(
+                    1,
+                    input_width,
+                    learning_rate,
+                    activation_function,
+                    activation_function_prime,
+                );
+                for _ in 0..network_depth - 2 {
+                    common_layers.push(Layer::new(
+                        network_width,
+                        network_width,
+                        learning_rate,
+                        activation_function,
+                        activation_function_prime,
+                    ))
+                }
+
+                (input_layer, output_layer, common_layers)
+            }
+        };
 
         let intermidiate_values: Vec<Vec<f64>> = Vec::new();
 
@@ -74,48 +119,39 @@ impl Network {
     }
 
     pub fn feedforward_compute(&mut self, inputs: &Vec<f64>) -> Result<f64, NetworkError> {
-        if inputs.len() != self.input_width {
-            return Err(NetworkError::InputIncompatibleWidth(
-                inputs.len(),
-                self.input_width,
-            ));
-        }
-
         self.intermediate_values.push(inputs.clone());
 
-        let input_params = self
-            .intermediate_values
-            .first()
-            .ok_or(NetworkError::IntermediateValuesIncomplete)?;
-        let first_layer_result = self.input_layer.compute_m_to_n(input_params);
+        if self.network_depth > 1 {
+            let first_layer_result = self.input_layer.compute_m_to_n(
+                self.intermediate_values
+                    .first()
+                    .ok_or(NetworkError::IntermediateValuesIncomplete)?,
+            );
 
-        self.intermediate_values.push(first_layer_result);
-
-        for i in 0..self.network_depth - 2 {
-            let current_layer = &self
-                .common_layers
-                .get(i)
-                .ok_or(NetworkError::InvalidCommonLayers)?;
-            let last_layer_outputs = self
-                .intermediate_values
-                .last()
-                .ok_or(NetworkError::IntermediateValuesIncomplete)?;
-            let value = current_layer.compute_m_to_n(last_layer_outputs);
-            self.intermediate_values.push(value)
+            self.intermediate_values.push(first_layer_result);
         }
 
-        let input_params = self
-            .intermediate_values
-            .last()
-            .ok_or(NetworkError::IntermediateValuesIncomplete)?;
-        let output = self.output_layer.compute_n_to_1(input_params);
+        if self.network_depth > 2 {
+            for i in 0..self.network_depth - 2 {
+                self.intermediate_values.push(
+                    self
+                        .common_layers
+                        .get(i)
+                        .ok_or(NetworkError::InvalidCommonLayers)?
+                        .compute_m_to_n(
+                            self.intermediate_values
+                                .last()
+                                .ok_or(NetworkError::IntermediateValuesIncomplete)?,
+                        ),
+                )
+            }
+        }
 
-        //        for layer in &intermidiate_values {
-        //            for item in layer {
-        //                print!("{:.1}\t", item);
-        //            }
-        //            println!("\n");
-        //        }
+        let output = self.output_layer.compute_n_to_1(
+            self.intermediate_values
+                .last()
+                .ok_or(NetworkError::IntermediateValuesIncomplete)?,
+        );
 
         Ok(output)
     }
@@ -123,34 +159,39 @@ impl Network {
     pub fn backpropagate_error(&mut self, final_error: f64) -> Result<(), NetworkError> {
         let mut intermediate_errors: Vec<Vec<f64>> = Vec::new();
 
+        self.output_layer.set_final_layer_error(final_error);
+
         intermediate_errors.push(vec![final_error]);
 
-        let last_layer_result = self.output_layer.compute_layer_errors(
-            self.intermediate_values
-                .last()
-                .ok_or(NetworkError::IntermediateValuesIncomplete)?,
-            intermediate_errors
-                .last()
-                .ok_or(NetworkError::ErrorsIncomplete)?,
-        );
-
-        intermediate_errors.push(last_layer_result);
-
-        for i in (self.network_depth - 2)..0 {
-            intermediate_errors.push(
-                self.common_layers
-                    .get_mut(i)
-                    .ok_or(NetworkError::InvalidCommonLayers)?
-                    .compute_layer_errors(
-                        self.intermediate_values
-                            .get(i)
-                            .ok_or(NetworkError::IntermediateValuesIncomplete)?,
-                        intermediate_errors
-                            .last()
-                            .ok_or(NetworkError::ErrorsIncomplete)?,
-                    ),
-            )
+        if self.network_depth > 2 {
+            for i in (self.network_depth - 2)..0 {
+                let next_layer_weights_by_neuron = self
+                    .common_layers
+                    .get(i + 1)
+                    .unwrap_or(&self.output_layer)
+                    .get_weights_by_neurons();
+                intermediate_errors.push(
+                    self.common_layers
+                        .get_mut(i)
+                        .ok_or(NetworkError::InvalidCommonLayers)?
+                        .compute_layer_errors(
+                            self.intermediate_values
+                                .get(i)
+                                .ok_or(NetworkError::IntermediateValuesIncomplete)?,
+                            intermediate_errors
+                                .last()
+                                .ok_or(NetworkError::ErrorsIncomplete)?,
+                            &next_layer_weights_by_neuron,
+                        )?,
+                )
+            }
         }
+
+        let next_layer_weights_by_neuron = self
+            .common_layers
+            .get(0)
+            .unwrap_or(&self.output_layer)
+            .get_weights_by_neurons();
 
         self.input_layer.compute_layer_errors(
             self.intermediate_values
@@ -159,7 +200,8 @@ impl Network {
             intermediate_errors
                 .last()
                 .ok_or(NetworkError::ErrorsIncomplete)?,
-        );
+            &next_layer_weights_by_neuron,
+        )?;
 
         Ok(())
     }
@@ -167,15 +209,17 @@ impl Network {
     pub fn step_gradient(&mut self, inputs: &Vec<f64>) -> Result<(), NetworkError> {
         self.input_layer.step_gradient(inputs);
 
-        for i in 0..self.network_depth - 2 {
-            self.common_layers
-                .get_mut(i)
-                .ok_or(NetworkError::InvalidCommonLayers)?
-                .step_gradient(
-                    self.intermediate_values
-                        .get(i + 1)
-                        .expect("Intermidiate values must be initialized!"),
-                );
+        if self.network_depth > 2 {
+            for i in 0..self.network_depth - 2 {
+                self.common_layers
+                    .get_mut(i)
+                    .ok_or(NetworkError::InvalidCommonLayers)?
+                    .step_gradient(
+                        self.intermediate_values
+                            .get(i + 1)
+                            .expect("Intermidiate values must be initialized!"),
+                    );
+            }
         }
 
         self.output_layer.step_gradient(
@@ -183,6 +227,8 @@ impl Network {
                 .last()
                 .ok_or(NetworkError::IntermediateValuesIncomplete)?,
         );
+
+        self.reset_intermediate_values();
 
         Ok(())
     }
@@ -193,11 +239,18 @@ impl Network {
         aim: f64,
     ) -> Result<(), NetworkError> {
         let final_answer = self.feedforward_compute(inputs)?;
-        let final_error = ((final_answer - aim) * (final_answer - aim)).sqrt();
-        self.backpropagate_error(final_error)?;
+        let last_neuron_error = -2.0 * (aim - final_answer);
+        //println!("Result: {final_answer}, {aim}");
+        println!("Network error: {:.2?}", aim - final_answer);
+        self.backpropagate_error(last_neuron_error)?;
+        //println!("Pos backprogation: {}", self);
         self.step_gradient(inputs)?;
-
+        //println!("Pos gradiente: {}", self);
         Ok(())
+    }
+
+    pub fn reset_intermediate_values(&mut self) {
+        self.intermediate_values = vec![];
     }
 }
 

@@ -1,9 +1,11 @@
 use rand::Rng;
 use std::fmt::Display;
+
+use crate::network::NetworkError;
 pub type ActivationFunction = fn(f64) -> f64;
 
 pub struct Neuron {
-    weights: Vec<f64>,
+    pub weights: Vec<f64>,
     pub bias: f64,
     current_error: f64,
     learning_rate: f64,
@@ -55,11 +57,19 @@ impl Neuron {
         (self.activation_function)(self.multiply_and_accumulate(inputs))
     }
 
-    pub fn calculate_error(&mut self, inputs: &Vec<f64>, next_layer_errors: &Vec<f64>) -> f64 {
+    pub fn calculate_error(
+        &mut self,
+        inputs: &Vec<f64>,
+        next_layer_errors_caused: &Vec<f64>,
+        next_layer_weights: &Vec<f64>,
+    ) -> Result<f64, NetworkError> {
         let temp_factor = (self.activation_function_prime)(self.multiply_and_accumulate(inputs));
-        let total = self.multiply_and_accumulate(next_layer_errors);
-        self.current_error = total * temp_factor;
-        self.current_error
+        let weights_times_errors_caused = next_layer_errors_caused
+            .iter()
+            .zip(next_layer_weights)
+            .fold(0.0, |acc, (a, b)| acc + a * b);
+        self.current_error = weights_times_errors_caused * temp_factor;
+        Ok(self.current_error)
     }
 
     pub fn step_gradient(&mut self, inputs: &Vec<f64>) {
@@ -68,7 +78,7 @@ impl Neuron {
             .iter()
             .zip(inputs.iter())
             .map(|(weight, input)| -> f64 {
-                weight.to_owned() - self.learning_rate * (self.current_error * input)
+                weight.to_owned() - self.learning_rate * self.current_error * input
             })
             .collect::<Vec<f64>>();
         self.bias -= self.learning_rate * self.current_error;
@@ -84,9 +94,7 @@ impl Display for Neuron {
         let mut current_string: String = "".to_owned();
         current_string += "->";
         for (i, weight) in self.weights.iter().enumerate() {
-            if i < 1 {
-                current_string = current_string + &format!("Weight {}: {:.2}.", i, weight);
-            }
+            current_string = current_string + &format!(" Weight {}: {:.2}.", i, weight);
         }
         current_string = current_string + &format!("\tNeuron Bias :{:.2}.", self.bias);
         current_string = current_string + &format!("\tNeuron Error :{:.2}.", self.current_error);
