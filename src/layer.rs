@@ -32,21 +32,36 @@ impl Layer {
         Layer { neuron_list }
     }
 
-    pub fn compute_m_to_n(&self, input_params: &Vec<f64>) -> Vec<f64> {
+    fn fetch_next_layer_weights_for_neuron(
+        next_layer_weights_by_neuron: &Vec<Vec<f64>>,
+        index: usize,
+    ) -> Result<Vec<f64>, NetworkError> {
+        let mut next_layer_weights_for_neuron = vec![];
+        for neuron_weights_list in next_layer_weights_by_neuron {
+            next_layer_weights_for_neuron.push(
+                *neuron_weights_list
+                    .get(index)
+                    .ok_or(NetworkError::ErrorsIncomplete)?,
+            );
+        }
+        Ok(next_layer_weights_for_neuron)
+    }
+
+    pub fn compute_m_to_n(&self, inputs: &Vec<f64>) -> Vec<f64> {
         let mut result_vec = Vec::new();
 
         for neuron in self.neuron_list.iter() {
-            result_vec.push(neuron.compute(input_params));
+            result_vec.push(neuron.compute(inputs));
         }
 
         result_vec
     }
 
-    pub fn compute_n_to_1(&self, input_params: &Vec<f64>) -> f64 {
+    pub fn compute_n_to_1(&self, inputs: &Vec<f64>) -> f64 {
         let mut result_vec = Vec::new();
 
         for neuron in self.neuron_list.iter() {
-            result_vec.push(neuron.compute(input_params));
+            result_vec.push(neuron.compute(inputs));
         }
 
         result_vec.into_iter().fold(0_f64, |acc, item| acc + item)
@@ -62,14 +77,8 @@ impl Layer {
             .iter_mut()
             .enumerate()
             .map(|(i, neuron)| {
-                let mut next_layer_weights_for_this_neuron = vec![];
-                for neuron_weights_list in next_layer_weights_by_neuron {
-                    next_layer_weights_for_this_neuron.push(
-                        *neuron_weights_list
-                            .get(i)
-                            .ok_or(NetworkError::ErrorsIncomplete)?,
-                    );
-                }
+                let next_layer_weights_for_this_neuron =
+                    Layer::fetch_next_layer_weights_for_neuron(next_layer_weights_by_neuron, i)?;
                 neuron.calculate_error(
                     inputs,
                     next_layer_errors_caused,
@@ -97,12 +106,13 @@ impl Layer {
         }
     }
 
-    pub fn set_final_layer_error(&mut self, error: f64) {
+    pub fn set_final_layer_error(&mut self, error: f64) -> Result<(), NetworkError> {
         let neuron = self
             .neuron_list
             .first_mut()
-            .expect("There should awlays be at least one neuron when calling this function.");
+            .ok_or(NetworkError::EmptyNeuronList)?;
         neuron.set_error(error);
+        Ok(())
     }
 
     pub fn get_weights_by_neurons(&self) -> Vec<Vec<f64>> {
