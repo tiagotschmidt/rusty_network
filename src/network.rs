@@ -67,7 +67,7 @@ impl Network {
 
                 let output_layer = Layer::new(
                     1,
-                    input_width,
+                    network_width,
                     learning_rate,
                     activation_function,
                     activation_function_prime,
@@ -83,13 +83,7 @@ impl Network {
                     activation_function,
                     activation_function_prime,
                 );
-                let output_layer = Layer::new(
-                    1,
-                    input_width,
-                    learning_rate,
-                    activation_function,
-                    activation_function_prime,
-                );
+
                 for _ in 0..network_depth - 2 {
                     common_layers.push(Layer::new(
                         network_width,
@@ -99,6 +93,14 @@ impl Network {
                         activation_function_prime,
                     ))
                 }
+
+                let output_layer = Layer::new(
+                    1,
+                    network_width,
+                    learning_rate,
+                    activation_function,
+                    activation_function_prime,
+                );
 
                 (input_layer, output_layer, common_layers)
             }
@@ -134,8 +136,7 @@ impl Network {
         if self.network_depth > 2 {
             for i in 0..self.network_depth - 2 {
                 self.intermediate_values.push(
-                    self
-                        .common_layers
+                    self.common_layers
                         .get(i)
                         .ok_or(NetworkError::InvalidCommonLayers)?
                         .compute_m_to_n(
@@ -241,7 +242,7 @@ impl Network {
         let final_answer = self.feedforward_compute(inputs)?;
         let last_neuron_error = -2.0 * (aim - final_answer);
         //println!("Result: {final_answer}, {aim}");
-        println!("Network error: {:.2?}", aim - final_answer);
+        //println!("Network error: {:.2?}", aim - final_answer);
         self.backpropagate_error(last_neuron_error)?;
         //println!("Pos backprogation: {}", self);
         self.step_gradient(inputs)?;

@@ -1,4 +1,3 @@
-use core::f64;
 use std::{
     fs::File,
     io::{BufRead, BufReader},
@@ -35,7 +34,8 @@ fn main() {
     //println!("{:?}", outputs);
 
     let network_depth: usize = 2;
-    let network_width: usize = 4_usize;
+    let input_width: usize = inputs.first().map(|list| list.len()).unwrap_or(0);
+    let network_width: usize = 1000_usize;
 
     println!("Profundidade da rede: {}", network_depth);
     println!("Largura da rede: {}", network_width);
@@ -43,8 +43,8 @@ fn main() {
     let mut new_network = Network::new(
         network_depth,
         network_width,
-        network_width,
-        0.01,
+        input_width,
+        0.001,
         |value| match value > 0.0 {
             true => value,
             false => 0.0,
@@ -56,11 +56,15 @@ fn main() {
     );
 
     //println!("{}", new_network);
-    for _ in 0..10000 {
+    for _ in 0..1000 {
         for (i, input) in inputs.iter().enumerate() {
-            let _optional_value =
+            let training_result =
                 new_network.batch_train_one_iteration(input, *outputs.get(i).unwrap());
             //println!("{}", new_network);
+            match training_result {
+                Ok(_) => (),
+                Err(error) => panic!("{:?}", error),
+            }
         }
     }
     let test_return = new_network.feedforward_compute(&vec![1.0, 5.09]);
