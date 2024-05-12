@@ -57,6 +57,10 @@ impl Neuron {
         (self.activation_function)(self.multiply_and_accumulate(inputs))
     }
 
+    pub fn compute_without_activation(&self, inputs: &[f64]) -> f64 {
+        self.multiply_and_accumulate(inputs)
+    }
+
     pub fn calculate_error(
         &mut self,
         inputs: &[f64],
@@ -80,6 +84,15 @@ impl Neuron {
             .map(|(weight, input)| -> f64 {
                 weight.to_owned() - self.learning_rate * self.current_error * input
             })
+            .collect::<Vec<f64>>();
+        self.bias -= self.learning_rate * self.current_error;
+    }
+
+    pub fn step_gradient_batch(&mut self) {
+        self.weights = self
+            .weights
+            .iter()
+            .map(|weight| -> f64 { weight.to_owned() - self.learning_rate * self.current_error })
             .collect::<Vec<f64>>();
         self.bias -= self.learning_rate * self.current_error;
     }

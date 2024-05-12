@@ -138,7 +138,7 @@ impl Network {
             }
         }
 
-        let output = self.output_layer.compute_n_to_1(
+        let output = self.output_layer.compute_n_to_1_without_activation_layer(
             self.intermediate_values
                 .last()
                 .ok_or(NetworkError::IntermediateValuesIncomplete)?,
@@ -154,7 +154,7 @@ impl Network {
 
         intermediate_errors.push(vec![final_error]);
 
-        if self.network_depth > 2 {
+        if let NetworkType::MultiLayerPerceptron = self.network_type {
             for i in (self.network_depth - 2)..0 {
                 let next_layer_weights_by_neuron = self
                     .common_layers
@@ -209,10 +209,10 @@ impl Network {
         Ok(())
     }
 
-    pub fn step_gradient(&mut self, inputs: &[f64]) -> Result<(), NetworkError> {
+    pub fn step_gradient_iteration(&mut self, inputs: &[f64]) -> Result<(), NetworkError> {
         self.input_layer.step_gradient(inputs);
 
-        if self.network_depth > 2 {
+        if let NetworkType::MultiLayerPerceptron = self.network_type {
             for i in 0..self.network_depth - 2 {
                 self.common_layers
                     .get_mut(i)
@@ -225,6 +225,8 @@ impl Network {
             }
         }
 
+        println!("tempo {:?}", self.intermediate_values);
+
         self.output_layer.step_gradient(
             self.intermediate_values
                 .last()
@@ -236,19 +238,58 @@ impl Network {
         Ok(())
     }
 
-    pub fn batch_train_one_iteration(
-        &mut self,
-        inputs: &[f64],
-        aim: f64,
-    ) -> Result<(), NetworkError> {
+    pub fn step_gradient_batch(&mut self) -> Result<(), NetworkError> {
+        self.input_layer.step_gradient_batch();
+
+        if let NetworkType::MultiLayerPerceptron = self.network_type {
+            for i in 0..self.network_depth - 2 {
+                self.common_layers
+                    .get_mut(i)
+                    .ok_or(NetworkError::InvalidCommonLayers)?
+                    .step_gradient_batch();
+            }
+        }
+
+        self.output_layer.step_gradient_batch();
+
+        self.reset_intermediate_values();
+
+        Ok(())
+    }
+
+    pub fn train_iteration(&mut self, inputs: &[f64], aim: f64) -> Result<(), NetworkError> {
         let final_answer = self.feedforward_compute(inputs)?;
         let last_neuron_error = (self.error_function)(aim, final_answer);
-        println!("Inputs: {:?}", inputs);
-        println!("Resposta: {final_answer}. Objetivo:{aim}");
-        println!("Network error: {:.2?}", last_neuron_error);
+        //println!("Inputs: {:?}", inputs);
+        //println!("Resposta: {final_answer}. Objetivo:{aim}");
+        //println!("Network error: {:.2?}", last_neuron_error);
         self.backpropagate_error(last_neuron_error)?;
+        //println!("Pos backprogation: {}", self);
+        self.step_gradient_iteration(inputs)?;
+        //println!("Pos gradiente: {}", self);
+        Ok(())
+    }
+
+    pub fn batch_train_all_input(
+        &mut self,
+        inputs: &Vec<Vec<f64>>,
+        targets: &[f64],
+    ) -> Result<(), NetworkError> {
+        let mut total_error = 0.0;
+        for (i, input) in inputs.iter().enumerate() {
+            let final_answer = self.feedforward_compute(input)?;
+            let last_neuron_error = (self.error_function)(
+                *targets.get(i).ok_or(NetworkError::InvalidInputInserted)?,
+                final_answer,
+            );
+            total_error += last_neuron_error;
+        }
+        println!("Inputs: {:?}", inputs);
+        let mse = total_error / inputs.len() as f64;
+        println!("Network error: {:.2?}", mse);
+        self.backpropagate_error(mse)?;
         println!("Pos backprogation: {}", self);
-        self.step_gradient(inputs)?;
+        self.step_gradient_batch()?;
         println!("Pos gradiente: {}", self);
         Ok(())
     }

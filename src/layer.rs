@@ -67,6 +67,16 @@ impl Layer {
         result_vec.into_iter().fold(0_f64, |acc, item| acc + item)
     }
 
+    pub fn compute_n_to_1_without_activation_layer(&self, inputs: &[f64]) -> f64 {
+        let mut result_vec = Vec::new();
+
+        for neuron in self.neuron_list.iter() {
+            result_vec.push(neuron.compute_without_activation(inputs));
+        }
+
+        result_vec.into_iter().fold(0_f64, |acc, item| acc + item)
+    }
+
     pub fn compute_layer_errors(
         &mut self,
         inputs: &[f64],
@@ -103,6 +113,12 @@ impl Layer {
     pub fn step_gradient(&mut self, inputs: &[f64]) {
         for neuron in self.neuron_list.iter_mut() {
             neuron.step_gradient(inputs);
+        }
+    }
+
+    pub fn step_gradient_batch(&mut self) {
+        for neuron in self.neuron_list.iter_mut() {
+            neuron.step_gradient_batch();
         }
     }
 
