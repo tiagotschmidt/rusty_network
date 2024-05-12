@@ -1,11 +1,10 @@
 use std::{
-    convert::identity,
     fs::File,
     io::{BufRead, BufReader},
 };
 
 use rusty_network::{
-    activation_functions::{identity_prime, relu, relu_prime},
+    activation_functions::{identity, identity_prime},
     error_functions::squared_loss_prime,
     network::Network,
 };
@@ -19,12 +18,12 @@ fn main() {
 
     for line in reader.lines() {
         let line_str = line.unwrap();
-        let values = line_str.split(",");
+        let values = line_str.split_whitespace();
 
         let mut input_data_line = vec![];
 
         for (index, value) in values.enumerate() {
-            if index < 1 {
+            if index < 2 {
                 input_data_line.push(value.parse::<f64>().unwrap());
             } else {
                 outputs.push(value.parse::<f64>().unwrap());
@@ -55,30 +54,27 @@ fn main() {
     )
     .unwrap();
 
-    for _ in 0..100 {
-        for (i, input) in inputs.iter().enumerate() {
-            println!("############################################");
-            let training_result =
-                new_network.batch_train_one_iteration(input, *outputs.get(i).unwrap());
-            //println!("{}", new_network);
-            match training_result {
-                Ok(_) => (),
-                Err(error) => panic!("{:?}", error),
-            }
-            println!("############################################");
+    for _ in 0..200 {
+        println!("############################################");
+        let training_result = new_network.train_by_iterations(&inputs, &outputs);
+        //println!("{}", new_network);
+        match training_result {
+            Ok(_) => (),
+            Err(error) => panic!("{:?}", error),
         }
+        println!("############################################");
     }
 
     //println!("{}", new_network);
 
-    let test_return = new_network.feedforward_compute(&[10.274]);
-    println!("Retorno de 1 - 5.09: {}", test_return.unwrap());
-    let test_return = new_network.feedforward_compute(&[2.0]);
-    println!("Retorno de 2 - 10.18: {}", test_return.unwrap());
-    let test_return = new_network.feedforward_compute(&[3.0]);
-    println!("Retorno de 3 - 15.27: {}", test_return.unwrap());
-    let test_return = new_network.feedforward_compute(&[4.0]);
-    println!("Retorno de 4 - 20.36: {}", test_return.unwrap());
-    let test_return = new_network.feedforward_compute(&[5.0]);
-    println!("Retorno de 5 - 25.45: {}", test_return.unwrap());
+    let test_return = new_network.feedforward_compute_batch(&[1.0, 5.09]);
+    println!("Retorno de 1 - 5.09: {}", test_return.unwrap().1);
+    let test_return = new_network.feedforward_compute_batch(&[2.0, 5.09]);
+    println!("Retorno de 2 - 10.18: {}", test_return.unwrap().1);
+    let test_return = new_network.feedforward_compute_batch(&[3.0, 5.09]);
+    println!("Retorno de 3 - 15.27: {}", test_return.unwrap().1);
+    let test_return = new_network.feedforward_compute_batch(&[4.0, 5.09]);
+    println!("Retorno de 4 - 20.36: {}", test_return.unwrap().1);
+    let test_return = new_network.feedforward_compute_batch(&[5.0, 5.09]);
+    println!("Retorno de 5 - 25.45: {}", test_return.unwrap().1);
 }

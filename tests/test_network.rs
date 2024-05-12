@@ -10,13 +10,13 @@ fn create_network() {
 
     let mut network_width_vec = vec![];
 
-    for _ in 0..second_random_integer {
+    for _ in 0..first_random_integer {
         let current_random_integer = rng.gen::<usize>() % 10_usize + 1_usize;
         network_width_vec.push(current_random_integer);
     }
 
     println!("Profundidade da rede: {}", first_random_integer);
-    println!("Largura da rede: {}", second_random_integer);
+    println!("Largura da rede: {:?}", network_width_vec);
 
     let mut new_network = match Network::new(
         first_random_integer,
@@ -34,7 +34,7 @@ fn create_network() {
         |aim, final_answer| -2.0 * (aim - final_answer),
     ) {
         Ok(item) => item,
-        Err(error) => panic!("{}", error),
+        Err(error) => panic!("{:#?}", error),
     };
 
     let mut input_vec = Vec::with_capacity(second_random_integer);
@@ -43,6 +43,6 @@ fn create_network() {
     }
 
     //println!("{}", new_network);
-    let optional_value = new_network.feedforward_compute(&input_vec);
+    let optional_value = new_network.feedforward_compute_iteration(&input_vec);
     assert!(optional_value.is_ok())
 }
