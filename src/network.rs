@@ -2,6 +2,8 @@ use crate::{layer::Layer, neuron::ActivationFunction};
 use std::fmt::Display;
 use thiserror::Error;
 
+pub type ErrorFunction = fn(f64, f64) -> f64;
+
 #[derive(Error, Debug)]
 pub enum NetworkError {
     #[error("Input data is width{0}, incompatible with network width {1}.")]
@@ -14,6 +16,10 @@ pub enum NetworkError {
     ErrorsIncomplete,
     #[error("Acessed and empty neuron list.")]
     EmptyNeuronList,
+    #[error("Incorrect definition of network width list.")]
+    IncorrectNetworkWidthList,
+    #[error("Input length is incompatible with network definition.")]
+    InvalidInputInserted,
 }
 
 enum NetworkType {
@@ -25,24 +31,26 @@ enum NetworkType {
 pub struct Network {
     intermediate_values: Vec<Vec<f64>>,
     pub network_depth: usize,
-    pub network_width: usize,
+    pub network_width: Vec<usize>,
     pub input_width: usize,
     pub learning_rate: f64,
     network_type: NetworkType,
     common_layers: Vec<Layer>,
     output_layer: Layer,
     input_layer: Layer,
+    error_function: ErrorFunction,
 }
 
 impl Network {
     pub fn new(
         network_depth: usize,
-        network_width: usize,
+        network_width: &[usize],
         input_width: usize,
         learning_rate: f64,
         activation_function: ActivationFunction,
         activation_function_prime: ActivationFunction,
-    ) -> Self {
+        error_function: ErrorFunction,
+    ) -> Result<Self, NetworkError> {
         let network_type = match network_depth {
             i if i == 1 => NetworkType::SingleNeuron,
             i if i == 2 => NetworkType::TwoLayerPerceptron,
@@ -57,14 +65,14 @@ impl Network {
                 activation_function,
                 activation_function_prime,
                 network_depth,
-            ),
+            )?,
             NetworkType::TwoLayerPerceptron => Network::generate_layers_for_two_layer_perceptron(
                 network_width,
                 input_width,
                 learning_rate,
                 activation_function,
                 activation_function_prime,
-            ),
+            )?,
             NetworkType::SingleNeuron => Network::generate_layers_for_single_neuron_model(
                 input_width,
                 learning_rate,
@@ -75,7 +83,9 @@ impl Network {
 
         let intermidiate_values: Vec<Vec<f64>> = Vec::new();
 
-        Network {
+        let network_width = network_width.to_vec();
+
+        let network = Network {
             intermediate_values: intermidiate_values,
             network_depth,
             network_width,
@@ -85,10 +95,16 @@ impl Network {
             common_layers,
             output_layer,
             input_layer,
-        }
+            error_function,
+        };
+        Ok(network)
     }
 
     pub fn feedforward_compute(&mut self, inputs: &[f64]) -> Result<f64, NetworkError> {
+        if inputs.len() != self.input_width {
+            return Err(NetworkError::InvalidInputInserted);
+        }
+
         self.intermediate_values.push(inputs.to_vec());
 
         match self.network_type {
@@ -226,13 +242,14 @@ impl Network {
         aim: f64,
     ) -> Result<(), NetworkError> {
         let final_answer = self.feedforward_compute(inputs)?;
-        let last_neuron_error = -2.0 * (aim - final_answer);
-        //println!("Result: {final_answer}, {aim}");
-        //println!("Network error: {:.2?}", aim - final_answer);
+        let last_neuron_error = (self.error_function)(aim, final_answer);
+        println!("Inputs: {:?}", inputs);
+        println!("Resposta: {final_answer}. Objetivo:{aim}");
+        println!("Network error: {:.2?}", last_neuron_error);
         self.backpropagate_error(last_neuron_error)?;
-        //println!("Pos backprogation: {}", self);
+        println!("Pos backprogation: {}", self);
         self.step_gradient(inputs)?;
-        //println!("Pos gradiente: {}", self);
+        println!("Pos gradiente: {}", self);
         Ok(())
     }
 
@@ -266,14 +283,16 @@ impl Network {
     }
 
     fn generate_layers_for_two_layer_perceptron(
-        network_width: usize,
+        network_width: &[usize],
         input_width: usize,
         learning_rate: f64,
         activation_function: fn(f64) -> f64,
         activation_function_prime: fn(f64) -> f64,
-    ) -> (Layer, Layer, Vec<Layer>) {
+    ) -> Result<(Layer, Layer, Vec<Layer>), NetworkError> {
         let input_layer = Layer::new(
-            network_width,
+            *network_width
+                .first()
+                .ok_or(NetworkError::IncorrectNetworkWidthList)?,
             input_width,
             learning_rate,
             activation_function,
@@ -282,36 +301,44 @@ impl Network {
 
         let output_layer = Layer::new(
             1,
-            network_width,
+            *network_width
+                .first()
+                .ok_or(NetworkError::IncorrectNetworkWidthList)?,
             learning_rate,
             activation_function,
             activation_function_prime,
         );
 
-        (input_layer, output_layer, Vec::new())
+        Ok((input_layer, output_layer, Vec::new()))
     }
 
     fn generate_layers_for_mlp(
-        network_width: usize,
+        network_width: &[usize],
         input_width: usize,
         learning_rate: f64,
         activation_function: fn(f64) -> f64,
         activation_function_prime: fn(f64) -> f64,
         network_depth: usize,
-    ) -> (Layer, Layer, Vec<Layer>) {
+    ) -> Result<(Layer, Layer, Vec<Layer>), NetworkError> {
         let mut common_layers = Vec::new();
         let input_layer = Layer::new(
-            network_width,
+            *network_width
+                .first()
+                .ok_or(NetworkError::IncorrectNetworkWidthList)?,
             input_width,
             learning_rate,
             activation_function,
             activation_function_prime,
         );
 
-        for _ in 0..network_depth - 2 {
+        for index in 0..network_depth - 2 {
             common_layers.push(Layer::new(
-                network_width,
-                network_width,
+                *network_width
+                    .get(index + 1)
+                    .ok_or(NetworkError::IncorrectNetworkWidthList)?,
+                *network_width
+                    .get(index)
+                    .ok_or(NetworkError::IncorrectNetworkWidthList)?,
                 learning_rate,
                 activation_function,
                 activation_function_prime,
@@ -320,13 +347,15 @@ impl Network {
 
         let output_layer = Layer::new(
             1,
-            network_width,
+            *network_width
+                .last()
+                .ok_or(NetworkError::IncorrectNetworkWidthList)?,
             learning_rate,
             activation_function,
             activation_function_prime,
         );
 
-        (input_layer, output_layer, common_layers)
+        Ok((input_layer, output_layer, common_layers))
     }
 }
 
