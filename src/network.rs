@@ -377,7 +377,7 @@ impl Network {
         self.backpropagate_error_iteration(last_neuron_error)?;
         //println!("Pos backprogation: {}", self);
         self.step_gradient_iteration(inputs)?;
-        println!("Pos gradiente: {}", self);
+        //println!("Pos gradiente: {}", self);
         Ok(())
     }
 
