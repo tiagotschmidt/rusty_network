@@ -116,12 +116,6 @@ impl Layer {
         }
     }
 
-    pub fn step_gradient_batch(&mut self) {
-        for neuron in self.neuron_list.iter_mut() {
-            neuron.step_gradient_batch();
-        }
-    }
-
     pub fn set_final_layer_error(&mut self, error: f64) -> Result<(), NetworkError> {
         let neuron = self
             .neuron_list

@@ -307,7 +307,7 @@ impl Network {
     fn backpropagate_error_batch(
         &mut self,
         final_error: f64,
-        intermediate_values: Vec<Vec<f64>>,
+        intermediate_values: &[Vec<f64>],
     ) -> Result<(), NetworkError> {
         let mut intermediate_errors: Vec<Vec<f64>> = Vec::new();
 
@@ -457,19 +457,32 @@ impl Network {
         Ok(())
     }
 
-    fn step_gradient_batch(&mut self) -> Result<(), NetworkError> {
-        self.input_layer.step_gradient_batch();
+    fn step_gradient_batch(
+        &mut self,
+        intermediate_values: &[Vec<f64>],
+    ) -> Result<(), NetworkError> {
+        let input = intermediate_values
+            .first()
+            .ok_or(NetworkError::IntermediateValuesIncomplete)?;
+        self.input_layer.step_gradient(input);
 
         if let NetworkType::MultiLayerPerceptron = self.network_type {
             for i in 0..self.network_depth - 2 {
+                let input = intermediate_values
+                    .get(i + 1)
+                    .ok_or(NetworkError::IntermediateValuesIncomplete)?;
                 self.common_layers
                     .get_mut(i)
                     .ok_or(NetworkError::InvalidCommonLayers)?
-                    .step_gradient_batch();
+                    .step_gradient(input);
             }
         }
 
-        self.output_layer.step_gradient_batch();
+        let input = intermediate_values
+            .last()
+            .ok_or(NetworkError::IntermediateValuesIncomplete)?;
+
+        self.output_layer.step_gradient(input);
 
         self.reset_intermediate_values();
 
@@ -498,7 +511,7 @@ impl Network {
             .map(|(_, return_value)| return_value)
     }
 
-    pub fn train_by_iterations(
+    pub fn iterations_train(
         &mut self,
         inputs: &[Vec<f64>],
         targets: &[f64],
@@ -512,7 +525,7 @@ impl Network {
         Ok(())
     }
 
-    pub fn batch_train_all_input(
+    pub fn batch_train(
         &mut self,
         inputs: &Vec<Vec<f64>>,
         targets: &[f64],
@@ -538,6 +551,7 @@ impl Network {
                 }
             }
         }
+        println!("Inputs: {:?}", inputs);
         let average_intermediate_values = total_intermediate_values
             .iter()
             .map(|item| {
@@ -545,10 +559,13 @@ impl Network {
                     .map(|value| value / inputs.len() as f64)
                     .collect()
             })
-            .collect();
+            .collect::<Vec<Vec<f64>>>();
         let average_error = total_error / inputs.len() as f64;
-        self.backpropagate_error_batch(average_error, average_intermediate_values)?;
-        self.step_gradient_batch()?;
+        println!("Network error: {:.2?}", average_error);
+        self.backpropagate_error_batch(average_error, &average_intermediate_values)?;
+        println!("Pos backprogation: {}", self);
+        self.step_gradient_batch(&average_intermediate_values)?;
+        println!("Pos gradiente: {}", self);
         Ok(())
     }
 

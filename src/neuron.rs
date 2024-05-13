@@ -88,15 +88,6 @@ impl Neuron {
         self.bias -= self.learning_rate * self.current_error;
     }
 
-    pub fn step_gradient_batch(&mut self) {
-        self.weights = self
-            .weights
-            .iter()
-            .map(|weight| -> f64 { weight.to_owned() - self.learning_rate * self.current_error })
-            .collect::<Vec<f64>>();
-        self.bias -= self.learning_rate * self.current_error;
-    }
-
     pub fn set_error(&mut self, error: f64) {
         self.current_error = error
     }

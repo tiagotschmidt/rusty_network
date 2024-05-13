@@ -97,7 +97,7 @@ fn test_simple_dollar_architecture() {
     .unwrap();
 
     for _ in 0..100 {
-        let training_result = new_network.train_by_iterations(&inputs, &outputs);
+        let training_result = new_network.iterations_train(&inputs, &outputs);
         match training_result {
             Ok(_) => (),
             Err(error) => panic!("{:?}", error),

@@ -54,15 +54,13 @@ fn main() {
     )
     .unwrap();
 
-    for _ in 0..200 {
-        println!("############################################");
-        let training_result = new_network.train_by_iterations(&inputs, &outputs);
+    for _ in 0..100 {
+        let training_result = new_network.batch_train(&inputs, &outputs);
         //println!("{}", new_network);
         match training_result {
             Ok(_) => (),
             Err(error) => panic!("{:?}", error),
         }
-        println!("############################################");
     }
 
     //println!("{}", new_network);
