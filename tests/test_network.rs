@@ -46,7 +46,7 @@ fn test_zero_input_network() {
         input_vec.push(0.0)
     }
 
-    let optional_value = new_network.feedforward_compute_iteration(&input_vec);
+    let optional_value = new_network.predict_iteration_no_activation(&input_vec);
     assert!(optional_value.is_ok())
 }
 
@@ -104,7 +104,7 @@ fn test_simple_dollar_architecture() {
         }
     }
 
-    let test_return = new_network.feedforward_compute_batch(&[5.0, 5.09]);
-    let final_result = test_return.unwrap().1;
+    let test_return = new_network.predict_batch_no_activation(&[5.0, 5.09]);
+    let final_result = test_return.unwrap();
     assert!(final_result < 26.0 && final_result > 24.0);
 }

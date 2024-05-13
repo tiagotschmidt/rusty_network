@@ -67,14 +67,14 @@ fn main() {
 
     //println!("{}", new_network);
 
-    let test_return = new_network.feedforward_compute_batch(&[1.0, 5.09]);
-    println!("Retorno de 1 - 5.09: {}", test_return.unwrap().1);
-    let test_return = new_network.feedforward_compute_batch(&[2.0, 5.09]);
-    println!("Retorno de 2 - 10.18: {}", test_return.unwrap().1);
-    let test_return = new_network.feedforward_compute_batch(&[3.0, 5.09]);
-    println!("Retorno de 3 - 15.27: {}", test_return.unwrap().1);
-    let test_return = new_network.feedforward_compute_batch(&[4.0, 5.09]);
-    println!("Retorno de 4 - 20.36: {}", test_return.unwrap().1);
-    let test_return = new_network.feedforward_compute_batch(&[5.0, 5.09]);
-    println!("Retorno de 5 - 25.45: {}", test_return.unwrap().1);
+    let test_return = new_network.predict_batch_no_activation(&[1.0, 5.09]);
+    println!("Retorno de 1 - 5.09: {}", test_return.unwrap());
+    let test_return = new_network.predict_batch_no_activation(&[2.0, 5.09]);
+    println!("Retorno de 2 - 10.18: {}", test_return.unwrap());
+    let test_return = new_network.predict_batch_no_activation(&[3.0, 5.09]);
+    println!("Retorno de 3 - 15.27: {}", test_return.unwrap());
+    let test_return = new_network.predict_batch_no_activation(&[4.0, 5.09]);
+    println!("Retorno de 4 - 20.36: {}", test_return.unwrap());
+    let test_return = new_network.predict_batch_no_activation(&[5.0, 5.09]);
+    println!("Retorno de 5 - 25.45: {}", test_return.unwrap());
 }
