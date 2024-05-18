@@ -1,23 +1,23 @@
 use rand::Rng;
 use std::fmt::Display;
 
-use crate::{functions::activation_functions::ActivationFunction, network_model::NetworkError};
+use crate::{functions::activation_functions::ActivationFunctionType, network_model::NetworkError};
 
 pub struct Neuron {
     pub weights: Vec<f64>,
     pub bias: f64,
     current_error: f64,
     learning_rate: f64,
-    activation_function: ActivationFunction,
-    activation_function_prime: ActivationFunction,
+    activation_function: ActivationFunctionType,
+    activation_function_prime: ActivationFunctionType,
 }
 
 impl Neuron {
     pub fn new(
         number_of_weights: usize,
         learning_rate: f64,
-        activation_function: ActivationFunction,
-        activation_function_prime: ActivationFunction,
+        activation_function: ActivationFunctionType,
+        activation_function_prime: ActivationFunctionType,
     ) -> Self {
         let mut rng = rand::thread_rng();
 

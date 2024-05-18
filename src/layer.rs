@@ -1,7 +1,7 @@
 use core::f64;
 use std::{fmt::Display, vec};
 
-use crate::functions::activation_functions::ActivationFunction;
+use crate::functions::activation_functions::ActivationFunctionType;
 use crate::network_model::NetworkError;
 use crate::neuron::Neuron;
 
@@ -14,8 +14,8 @@ impl Layer {
         layer_width: usize,
         input_width: usize,
         learning_rate: f64,
-        activation_function: ActivationFunction,
-        activation_function_prime: ActivationFunction,
+        activation_function: ActivationFunctionType,
+        activation_function_prime: ActivationFunctionType,
     ) -> Layer {
         let mut neuron_list = Vec::new();
 

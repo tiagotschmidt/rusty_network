@@ -1,10 +1,10 @@
-use crate::functions::error_functions::ErrorFunctionType;
+use crate::functions::activation_functions::ActivationFunction;
+use crate::functions::error_functions::ErrorFunction;
 use crate::layer::Layer;
 use crate::network_model::{NetworkError, NetworkType};
-use crate::{network_display, new_network_function};
 use std::fmt::Display;
 
-pub struct SequentialNetwork {
+pub struct PipelineNetwork {
     intermediate_values: Vec<Vec<f64>>,
     pub network_depth: usize,
     pub network_width: Vec<usize>,
@@ -14,11 +14,11 @@ pub struct SequentialNetwork {
     common_layers: Vec<Layer>,
     output_layer: Layer,
     input_layer: Layer,
-    error_function: ErrorFunctionType,
+    error_function: ErrorFunction,
 }
 
-impl SequentialNetwork {
-    new_network_function!(SequentialNetwork);
+impl PipelineNetwork {
+    new_network_function!(PipelineNetwork);
 
     fn feedforward_compute_iteration_no_activation(
         &mut self,
@@ -393,4 +393,4 @@ impl SequentialNetwork {
     }
 }
 
-network_display!(SequentialNetwork);
+network_display!(PipelineNetwork);
