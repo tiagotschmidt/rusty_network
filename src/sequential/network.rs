@@ -1,34 +1,10 @@
-use crate::{layer::Layer, neuron::ActivationFunction};
+use crate::functions::activation_functions::ActivationFunction;
+use crate::functions::error_functions::ErrorFunction;
+use crate::layer::Layer;
+use crate::network_model::{NetworkError, NetworkType};
 use std::fmt::Display;
-use thiserror::Error;
 
-pub type ErrorFunction = fn(f64, f64) -> f64;
-
-#[derive(Error, Debug)]
-pub enum NetworkError {
-    #[error("Input data is width{0}, incompatible with network width {1}.")]
-    InputIncompatibleWidth(usize, usize),
-    #[error("Intermediate values is incorrect.")]
-    IntermediateValuesIncomplete,
-    #[error("Failed to get/interact with the common layers in the network. Check network depth")]
-    InvalidCommonLayers,
-    #[error("Failed to get/interact with the common layers in the network. Check network depth")]
-    ErrorsIncomplete,
-    #[error("Acessed and empty neuron list.")]
-    EmptyNeuronList,
-    #[error("Incorrect definition of network width list.")]
-    IncorrectNetworkWidthList,
-    #[error("Input length is incompatible with network definition.")]
-    InvalidInputInserted,
-}
-
-enum NetworkType {
-    MultiLayerPerceptron,
-    TwoLayerPerceptron,
-    SingleNeuron,
-}
-
-pub struct Network {
+pub struct SequentialNetwork {
     intermediate_values: Vec<Vec<f64>>,
     pub network_depth: usize,
     pub network_width: Vec<usize>,
@@ -41,7 +17,7 @@ pub struct Network {
     error_function: ErrorFunction,
 }
 
-impl Network {
+impl SequentialNetwork {
     pub fn new(
         network_depth: usize,
         network_width: &[usize],
@@ -58,7 +34,7 @@ impl Network {
         };
 
         let (input_layer, output_layer, common_layers) = match network_type {
-            NetworkType::MultiLayerPerceptron => Network::generate_layers_for_mlp(
+            NetworkType::MultiLayerPerceptron => SequentialNetwork::generate_layers_for_mlp(
                 network_width,
                 input_width,
                 learning_rate,
@@ -66,26 +42,30 @@ impl Network {
                 activation_function_prime,
                 network_depth,
             )?,
-            NetworkType::TwoLayerPerceptron => Network::generate_layers_for_two_layer_perceptron(
-                network_width,
-                input_width,
-                learning_rate,
-                activation_function,
-                activation_function_prime,
-            )?,
-            NetworkType::SingleNeuron => Network::generate_layers_for_single_neuron_model(
-                input_width,
-                learning_rate,
-                activation_function,
-                activation_function_prime,
-            ),
+            NetworkType::TwoLayerPerceptron => {
+                SequentialNetwork::generate_layers_for_two_layer_perceptron(
+                    network_width,
+                    input_width,
+                    learning_rate,
+                    activation_function,
+                    activation_function_prime,
+                )?
+            }
+            NetworkType::SingleNeuron => {
+                SequentialNetwork::generate_layers_for_single_neuron_model(
+                    input_width,
+                    learning_rate,
+                    activation_function,
+                    activation_function_prime,
+                )
+            }
         };
 
         let intermidiate_values: Vec<Vec<f64>> = Vec::new();
 
         let network_width = network_width.to_vec();
 
-        let network = Network {
+        let network = SequentialNetwork {
             intermediate_values: intermidiate_values,
             network_depth,
             network_width,
@@ -574,7 +554,7 @@ impl Network {
     }
 }
 
-impl Display for Network {
+impl Display for SequentialNetwork {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut current_string: String = "".to_owned();
         current_string += "\nNetwork:";

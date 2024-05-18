@@ -1,3 +1,4 @@
+pub type ActivationFunction = fn(f64) -> f64;
 pub fn relu(value: f64) -> f64 {
     match value > 0.0 {
         true => value,

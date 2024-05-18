@@ -6,9 +6,11 @@ use std::{
 
 use rand::Rng;
 use rusty_network::{
-    activation_functions::{identity_prime, relu, relu_prime},
-    error_functions::squared_loss_prime,
-    network::Network,
+    functions::{
+        activation_functions::{identity_prime, relu, relu_prime},
+        error_functions::squared_loss_prime,
+    },
+    sequential::network::SequentialNetwork,
 };
 
 #[test]
@@ -28,7 +30,7 @@ fn test_zero_input_network() {
     println!("Profundidade da rede: {}", first_random_integer);
     println!("Largura da rede: {:?}", network_width_vec);
 
-    let mut new_network = match Network::new(
+    let mut new_network = match SequentialNetwork::new(
         first_random_integer,
         &network_width_vec,
         second_random_integer,
@@ -85,7 +87,7 @@ fn test_simple_dollar_architecture() {
     println!("Largura da rede: {:?}", network_width);
 
     let learning_rate = 0.01;
-    let mut new_network = Network::new(
+    let mut new_network = SequentialNetwork::new(
         network_depth,
         &network_width,
         input_width,

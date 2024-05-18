@@ -1,10 +1,9 @@
 use core::f64;
 use std::{fmt::Display, vec};
 
-use crate::{
-    network::NetworkError,
-    neuron::{ActivationFunction, Neuron},
-};
+use crate::functions::activation_functions::ActivationFunction;
+use crate::network_model::NetworkError;
+use crate::neuron::Neuron;
 
 pub struct Layer {
     neuron_list: Vec<Neuron>,

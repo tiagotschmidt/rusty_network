@@ -1,8 +1,7 @@
 use rand::Rng;
 use std::fmt::Display;
 
-use crate::network::NetworkError;
-pub type ActivationFunction = fn(f64) -> f64;
+use crate::{functions::activation_functions::ActivationFunction, network_model::NetworkError};
 
 pub struct Neuron {
     pub weights: Vec<f64>,

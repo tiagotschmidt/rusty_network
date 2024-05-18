@@ -4,9 +4,9 @@ use std::{
 };
 
 use rusty_network::{
-    activation_functions::{identity, identity_prime},
-    error_functions::squared_loss_prime,
-    network::Network,
+    functions::activation_functions::{identity, identity_prime},
+    functions::error_functions::squared_loss_prime,
+    sequential::network::SequentialNetwork,
 };
 
 fn main() {
@@ -43,7 +43,7 @@ fn main() {
     println!("Largura da rede: {:?}", network_width);
 
     let learning_rate = 0.01;
-    let mut new_network = Network::new(
+    let mut new_network = SequentialNetwork::new(
         network_depth,
         &network_width,
         input_width,

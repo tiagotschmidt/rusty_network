@@ -1,6 +1,6 @@
 use rand::Rng;
 use rusty_network::{
-    activation_functions::{relu, relu_prime},
+    functions::activation_functions::{relu, relu_prime},
     layer::Layer,
 };
 
